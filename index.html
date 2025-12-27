@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>⚽ بث المباريات</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            background: #000;
+            color: white;
+            text-align: center;
+            padding: 50px;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 40px;
+            border-radius: 20px;
+            border: 2px solid #00b4d8;
+        }
+        
+        .logo {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #00b4d8;
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            margin: 20px 0;
+            background: #00b4d8;
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            background: #0093b0;
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(0, 180, 216, 0.3);
+        }
+        
+        .btn.pro {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            border: none;
+        }
+        
+        .btn.pro:hover {
+            background: linear-gradient(45deg, #ee5a24, #ff6b6b);
+            box-shadow: 0 10px 20px rgba(238, 90, 36, 0.3);
+        }
+        
+        .feature {
+            background: rgba(255, 107, 107, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-right: 4px solid #ff6b6b;
+            text-align: right;
+        }
+        
+        .feature li {
+            list-style: none;
+            padding: 5px 0;
+            color: #ffcccb;
+        }
+        
+        .feature li:before {
+            content: "✓ ";
+            color: #ff6b6b;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            color: #888;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">⚽</div>
+        <h1>بث المباريات المباشر</h1>
+        <p style="color: #aaa; margin-bottom: 30px;">
+            شاهد أهم المباريات مباشرة وبجودة عالية
+        </p>
+        
+        <a href="app.html" class="btn pro">
+            🛡️ افتح النسخة المحترفة
+        </a>
+        
+        <div class="feature">
+            <h3 style="color: #ff6b6b; margin-top: 0;">مميزات النسخة المحترفة:</h3>
+            <ul>
+                <li>حظر إعلانات متقدم</li>
+                <li>مقاومة للتجاوز</li>
+                <li>حماية طويلة الأمد</li>
+                <li>بدون إعلانات مزعجة</li>
+            </ul>
+        </div>
+        
+        <p style="color: #00b4d8; font-weight: bold; margin: 20px 0;">
+            موصى بها للمشاهدة الطويلة
+        </p>
+        
+        <div class="footer">
+            <p>© 2024 | يعمل على جميع الأجهزة</p>
+        </div>
+    </div>
+    
+    <script>
+        // تأثير بسيط عند التحميل
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.querySelector('.container');
+            container.style.opacity = '0';
+            container.style.transform = 'translateY(30px)';
+            
+            setTimeout(() => {
+                container.style.transition = 'all 0.8s ease';
+                container.style.opacity = '1';
+                container.style.transform = 'translateY(0)';
+            }, 100);
+            
+            console.log('صفحة الاختيار جاهزة!');
+        });
+    </script>
+</body>
+</html>
