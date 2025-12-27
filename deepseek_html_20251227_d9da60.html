@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بث المباريات - حظر إعلانات دائم</title>
+    <style>
+        /* تصميم مبسط ومركز */
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #streamFrame {
+            width: 100%;
+            height: 100vh;
+            border: none;
+        }
+        
+        .ad-block-status {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: #00b4d8;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+    <!-- شاشة التحميل -->
+    <div id="loading" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        font-size: 20px;
+    ">
+        جاري تحميل البث بدون إعلانات...
+    </div>
+    
+    <!-- حاوية البث -->
+    <div id="playerContainer">
+        <iframe 
+            id="streamFrame"
+            allowfullscreen>
+        </iframe>
+    </div>
+    
+    <!-- حالة حظر الإعلانات -->
+    <div class="ad-block-status" id="adStatus">حظر الإعلانات: نشط ✓</div>
+
+    <script>
+        // ============================================
+        // نظام حظر الإعلانات القوي والدائم
+        // ============================================
+        
+        // قائمة القنوات
+        const channels = [
+            {
+                id: 1,
+                name: "القناة الرئيسية",
+                url: "https://football-stream-hub.blogspot.com/p/player.html?url=https://can2025.aflam4you.net/embed.php?vid=179"
+            },
+            {
+                id: 2,
+                name: "القناة الثانية",
+                url: "https://football-stream-hub.blogspot.com/p/player.html?url=https://can2025.aflam4you.net/embed.php?vid=180"
+            },
+            {
+                id: 3,
+                name: "القناة الثالثة",
+                url: "https://football-stream-hub.blogspot.com/p/player.html?url=https://can2025.aflam4you.net/embed.php?vid=68"
+            },
+            {
+                id: 4,
+                name: "القناة الرابعة",
+                url: "https://football-stream-hub.blogspot.com/p/player.html?url=https://can2025.aflam4you.net/embed.php?vid=2"
+            }
+        ];
+        
+        let currentChannel = 0;
+        let blockedAds = 0;
+        
+        // تهيئة التطبيق
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('بدء نظام حظر الإعلانات المتقدم...');
+            loadChannel(0);
+            startAdvancedAdBlocker();
+        });
+        
+        // ============================================
+        // 1. نظام حظر الإعلانات المتقدم
+        // ============================================
+        function startAdvancedAdBlocker() {
+            console.log('تفعيل حظر الإعلانات المتقدم...');
+            
+            // قوائم شاملة لحظر الإعلانات
+            const adPatterns = {
+                selectors: [
+                    // عناصر HTML الشائعة للإعلانات
+                    '[class*="ad"]', '[id*="ad"]', '[class*="Ad"]', '[id*="Ad"]',
+                    '[class*="banner"]', '[id*="banner"]',
+                    '.advertisement', '.ads', '.ad-container', '.ad-wrapper',
+                    '.adbox', '.ad-unit', '.ad-area', '.ad-placeholder',
+                    '.popup', '.modal', '.overlay',
+                    '[class*="google"]', '[id*="google"]',
+                    '[class*="doubleclick"]', '[id*="doubleclick"]',
+                    
+                    // إعلانات الفيديو
+                    '[class*="video-ad"]', '[id*="video-ad"]',
+                    '.preroll-ad', '.midroll-ad', '.postroll-ad',
+                    
+                    // إعلانات الوسائط الاجتماعية
+                    '[class*="facebook"]', '[id*="facebook"]',
+                    '[class*="twitter"]', '[id*="twitter"]',
+                    '[class*="insta"]', '[id*="insta"]',
+                    
+                    // إعلانات محركات البحث
+                    '[class*="adsbygoogle"]', '[id*="adsbygoogle"]',
+                    '.adsense', '.adwords'
+                ],
+                
+                urls: [
+                    // نطاقات الإعلانات المعروفة
+                    'doubleclick.net',
+                    'googlesyndication.com',
+                    'google-analytics.com',
+                    'facebook.com/plugins',
+                    'twitter.com/widgets',
+                    'adsystem.com',
+                    'adservice.google.com',
+                    'adnxs.com',
+                    'amazon-adsystem.com',
+                    'scorecardresearch.com'
+                ],
+                
+                scripts: [
+                    // ملفات JavaScript للإعلانات
+                    'ads.js', 'advertisement.js', 'banner.js',
+                    'google-analytics.com/analytics.js',
+                    'googletagservices.com/tag/js/gpt.js'
+                ]
+            };
+            
+            // ============================================
+            // أ) حظر على مستوى الصفحة الرئيسية
+            // ============================================
+            
+            // 1. منع تحميل ملفات الإعلانات
+            const originalAppendChild = Element.prototype.appendChild;
+            Element.prototype.appendChild = function(element) {
+                if (element.tagName === 'SCRIPT' && element.src) {
+                    for (const pattern of adPatterns.scripts) {
+                        if (element.src.includes(pattern)) {
+                            console.log('تم حظر تحميل سكريبت إعلانات:', element.src);
+                            blockedAds++;
+                            updateAdCounter();
+                            return element; // لا نحمل الملف
+                        }
+                    }
+                }
+                return originalAppendChild.call(this, element);
+            };
+            
+            // 2. منع إنشاء عناصر الإعلانات
+            const originalCreateElement = Document.prototype.createElement;
+            Document.prototype.createElement = function(tagName) {
+                const element = originalCreateElement.call(this, tagName);
+                
+                if (tagName === 'iframe' || tagName === 'img' || tagName === 'div') {
+                    // سنراقب الإضافات لاحقاً
+                    element.setAttribute('data-monitored', 'true');
+                }
+                
+                return element;
+            };
+            
+            // ============================================
+            // ب) حظر ديناميكي مستمر
+            // ============================================
+            
+            // مراقبة DOM باستمرار
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    // فحص العناصر المضافة
+                    if (mutation.addedNodes.length > 0) {
+                        mutation.addedNodes.forEach(function(node) {
+                            if (node.nodeType === 1) { // عنصر HTML
+                                checkAndBlockElement(node);
+                            }
+                        });
+                    }
+                    
+                    // فحص التغييرات في السمات
+                    if (mutation.type === 'attributes') {
+                        checkAndBlockElement(mutation.target);
+                    }
+                });
+            });
+            
+            // بدء المراقبة الشاملة
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['src', 'href', 'class', 'id', 'style']
+            });
+            
+            // ============================================
+            // ج) حظر الطلبات الشبكية
+            // ============================================
+            
+            // اعتراض طلبات الشبكة (إذا كان المدعم)
+            if (window.fetch) {
+                const originalFetch = window.fetch;
+                window.fetch = function(...args) {
+                    const url = args[0] instanceof Request ? args[0].url : args[0];
+                    
+                    for (const pattern of adPatterns.urls) {
+                        if (url && url.includes(pattern)) {
+                            console.log('تم حظر طلب إعلان:', url);
+                            blockedAds++;
+                            updateAdCounter();
+                            return Promise.reject(new Error('تم حظر الإعلان'));
+                        }
+                    }
+                    
+                    return originalFetch.apply(this, args);
+                };
+            }
+            
+            // اعتراض XMLHttpRequest
+            const originalXHROpen = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function(method, url) {
+                for (const pattern of adPatterns.urls) {
+                    if (url && url.includes(pattern)) {
+                        console.log('تم حظر طلب XHR لإعلان:', url);
+                        blockedAds++;
+                        updateAdCounter();
+                        this._blocked = true;
+                        return;
+                    }
+                }
+                originalXHROpen.apply(this, arguments);
+            };
+            
+            // ============================================
+            // د) منع النوافذ المنبثقة
+            // ============================================
+            
+            // تعطيل window.open للإعلانات
+            window.open = function(url, target) {
+                if (url) {
+                    for (const pattern of adPatterns.urls) {
+                        if (url.includes(pattern)) {
+                            console.log('تم حظر نافذة منبثقة لإعلان:', url);
+                            blockedAds++;
+                            updateAdCounter();
+                            return null;
+                        }
+                    }
+                }
+                
+                // السماح بفتح النوافذ الداخلية فقط
+                if (target === '_blank') {
+                    return null;
+                }
+                
+                // محاكاة الفتح في نفس الصفحة
+                try {
+                    window.location.href = url;
+                    return window;
+                } catch(e) {
+                    return null;
+                }
+            };
+            
+            // تعطيل alert و confirm و prompt للإعلانات
+            window.alert = function() { 
+                console.log('تم حظر نافذة تنبيه');
+                return true; 
+            };
+            
+            window.confirm = function() { 
+                console.log('تم حظر نافذة تأكيد');
+                return true; 
+            };
+            
+            // ============================================
+            // هـ) حظر الإعلانات في iframe
+            // ============================================
+            
+            // حقن كود حظر الإعلانات في iframe
+            function injectAdBlockerIntoIframe(iframe) {
+                if (iframe.contentDocument) {
+                    const script = iframe.contentDocument.createElement('script');
+                    script.textContent = `
+                        // كود حظر الإعلانات المصغر للـ iframe
+                        setInterval(function() {
+                            var selectors = ['[class*="ad"]', '[id*="ad"]', '.banner', '.advertisement'];
+                            selectors.forEach(function(selector) {
+                                var elements = document.querySelectorAll(selector);
+                                elements.forEach(function(el) {
+                                    el.style.display = 'none';
+                                    el.remove();
+                                });
+                            });
+                        }, 1000);
+                    `;
+                    iframe.contentDocument.head.appendChild(script);
+                }
+            }
+            
+            // مراقبة iframes
+            const iframeObserver = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.addedNodes.length > 0) {
+                        mutation.addedNodes.forEach(function(node) {
+                            if (node.tagName === 'IFRAME') {
+                                injectAdBlockerIntoIframe(node);
+                            }
+                        });
+                    }
+                });
+            });
+            
+            iframeObserver.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+            
+            // ============================================
+            // و) التنظيف الدوري
+            // ============================================
+            
+            // تنظيف دوري كل 5 ثوان
+            setInterval(function() {
+                adPatterns.selectors.forEach(function(selector) {
+                    try {
+                        document.querySelectorAll(selector).forEach(function(el) {
+                            if (el.style.display !== 'none') {
+                                el.style.display = 'none';
+                                el.remove();
+                                blockedAds++;
+                                updateAdCounter();
+                            }
+                        });
+                    } catch(e) {
+                        // تجاهل الأخطاء في selectors غير الصالحة
+                    }
+                });
+                
+                // حظر iframes الإعلانية
+                document.querySelectorAll('iframe').forEach(function(iframe) {
+                    if (iframe.src) {
+                        for (const pattern of adPatterns.urls) {
+                            if (iframe.src.includes(pattern)) {
+                                iframe.remove();
+                                blockedAds++;
+                                updateAdCounter();
+                            }
+                        }
+                    }
+                });
+                
+            }, 5000); // كل 5 ثوان
+            
+            console.log('تم تفعيل نظام حظر الإعلانات المتقدم');
+        }
+        
+        // ============================================
+        // 2. فحص وحظر العناصر
+        // ============================================
+        function checkAndBlockElement(element) {
+            // فحص العنصر نفسه
+            checkElementForAds(element);
+            
+            // فحص العناصر الفرعية
+            if (element.querySelectorAll) {
+                element.querySelectorAll('*').forEach(checkElementForAds);
+            }
+        }
+        
+        function checkElementForAds(element) {
+            if (!element || !element.getAttribute) return;
+            
+            // فحص الكلاسات والأ IDs
+            const className = element.className || '';
+            const id = element.id || '';
+            const src = element.src || '';
+            const href = element.href || '';
+            
+            // قائمة الأنماط للكشف
+            const patterns = [
+                'ad', 'Ad', 'banner', 'Banner', 'popup', 'modal',
+                'adsbygoogle', 'doubleclick', 'adservice'
+            ];
+            
+            // التحقق من وجود أي نمط إعلاني
+            for (const pattern of patterns) {
+                if ((typeof className === 'string' && className.includes(pattern)) ||
+                    (typeof id === 'string' && id.includes(pattern)) ||
+                    (src && src.includes(pattern)) ||
+                    (href && href.includes(pattern))) {
+                    
+                    // حظر العنصر
+                    element.style.display = 'none';
+                    element.style.visibility = 'hidden';
+                    element.style.opacity = '0';
+                    element.style.position = 'absolute';
+                    element.style.left = '-9999px';
+                    
+                    // محاولة إزالته
+                    try {
+                        element.remove();
+                    } catch(e) {
+                        // تجاهل خطأ الإزالة
+                    }
+                    
+                    blockedAds++;
+                    updateAdCounter();
+                    
+                    console.log('تم حظر عنصر إعلاني:', { className, id, src, href });
+                    break;
+                }
+            }
+        }
+        
+        // ============================================
+        // 3. تحديث العداد
+        // ============================================
+        function updateAdCounter() {
+            document.getElementById('adStatus').textContent = 
+                `تم حظر ${blockedAds} إعلان ✓`;
+            
+            // حفظ العداد في localStorage
+            localStorage.setItem('totalBlockedAds', blockedAds);
+        }
+        
+        // ============================================
+        // 4. تحميل القناة
+        // ============================================
+        function loadChannel(index) {
+            if (index < 0 || index >= channels.length) return;
+            
+            currentChannel = index;
+            
+            // إظهار شاشة التحميل
+            document.getElementById('loading').style.display = 'flex';
+            
+            // تحميل القناة بعد تنظيف الإعلانات
+            setTimeout(function() {
+                const iframe = document.getElementById('streamFrame');
+                iframe.src = channels[index].url;
+                
+                // إخفاء شاشة التحميل بعد 3 ثوان
+                setTimeout(function() {
+                    document.getElementById('loading').style.display = 'none';
+                }, 3000);
+                
+                // تحديث العداد من localStorage
+                const savedAds = localStorage.getItem('totalBlockedAds');
+                if (savedAds) {
+                    blockedAds = parseInt(savedAds);
+                    updateAdCounter();
+                }
+                
+            }, 1000);
+        }
+        
+        // ============================================
+        // 5. اختصارات لوحة المفاتيح
+        // ============================================
+        document.addEventListener('keydown', function(e) {
+            // Ctrl + 1,2,3,4 لتبديل القنوات
+            if (e.ctrlKey) {
+                const key = parseInt(e.key);
+                if (key >= 1 && key <= 4) {
+                    loadChannel(key - 1);
+                }
+            }
+            
+            // F5 أو Ctrl+R لإعادة التحميل
+            if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
+                e.preventDefault();
+                loadChannel(currentChannel);
+            }
+            
+            // F11 لملء الشاشة
+            if (e.key === 'F11') {
+                e.preventDefault();
+                toggleFullScreen();
+            }
+        });
+        
+        // ============================================
+        // 6. ملء الشاشة
+        // ============================================
+        function toggleFullScreen() {
+            const elem = document.getElementById('playerContainer');
+            
+            if (!document.fullscreenElement) {
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen();
+                } else if (elem.webkitRequestFullscreen) {
+                    elem.webkitRequestFullscreen();
+                } else if (elem.msRequestFullscreen) {
+                    elem.msRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+            }
+        }
+        
+        // ============================================
+        // 7. منع الخروج من التطبيق
+        // ============================================
+        window.onbeforeunload = function(e) {
+            e.preventDefault();
+            e.returnValue = '';
+            
+            // يمكن إضافة رسالة تأكيد إذا أردت
+            return 'هل تريد حقاً مغادرة التطبيق؟';
+        };
+        
+        // منع فتح روابط خارجية
+        document.addEventListener('click', function(e) {
+            if (e.target.tagName === 'A' && e.target.href) {
+                e.preventDefault();
+                
+                // السماح فقط بالروابط الداخلية
+                const url = e.target.href.toLowerCase();
+                if (url.includes('embed.php?vid=')) {
+                    // البحث عن رقم الفيديو في الرابط
+                    const match = url.match(/vid=(\d+)/);
+                    if (match) {
+                        const vid = match[1];
+                        // تحميل الفيديو الجديد
+                        document.getElementById('streamFrame').src = 
+                            `https://football-stream-hub.blogspot.com/p/player.html?url=https://can2025.aflam4you.net/embed.php?vid=${vid}`;
+                    }
+                }
+            }
+        });
+        
+        // ============================================
+        // 8. حماية إضافية ضد الإعلانات
+        // ============================================
+        
+        // حظر محاولات تجاوز نظام الحظر
+        Object.defineProperty(window, 'adsbygoogle', {
+            get: function() {
+                console.log('تم اعتراض محاولة الوصول إلى adsbygoogle');
+                return [];
+            },
+            set: function() {
+                console.log('تم اعتراض محاولة تعيين adsbygoogle');
+            },
+            configurable: false
+        });
+        
+        // تهيئة العداد عند البدء
+        setTimeout(function() {
+            const saved = localStorage.getItem('totalBlockedAds');
+            if (saved) {
+                blockedAds = parseInt(saved);
+            } else {
+                blockedAds = 0;
+            }
+            updateAdCounter();
+        }, 2000);
+        
+    </script>
+</body>
+</html>
